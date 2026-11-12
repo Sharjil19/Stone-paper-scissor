@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock, Paper, Scissors</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center">
+
+    <div class="bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md text-center border border-slate-700">
+        <h1 class="text-3xl font-bold mb-2 text-indigo-400">Rock, Paper, Scissors</h1>
+        <p class="text-slate-400 text-sm mb-6">Play against your FastAPI backend!</p>
+
+        <!-- Choice Buttons -->
+        <div class="flex justify-center gap-4 mb-8">
+            <button onclick="play('rock')" class="choice-btn bg-slate-700 hover:bg-indigo-600 border border-slate-600 hover:border-indigo-500 p-4 rounded-xl text-3xl transition cursor-pointer shadow-md">
+                🪨
+                <span class="block text-xs font-semibold mt-1 text-slate-300">Rock</span>
+            </button>
+            <button onclick="play('paper')" class="choice-btn bg-slate-700 hover:bg-indigo-600 border border-slate-600 hover:border-indigo-500 p-4 rounded-xl text-3xl transition cursor-pointer shadow-md">
+                📄
+                <span class="block text-xs font-semibold mt-1 text-slate-300">Paper</span>
+            </button>
+            <button onclick="play('scissors')" class="choice-btn bg-slate-700 hover:bg-indigo-600 border border-slate-600 hover:border-indigo-500 p-4 rounded-xl text-3xl transition cursor-pointer shadow-md">
+                ✂️
+                <span class="block text-xs font-semibold mt-1 text-slate-300">Scissors</span>
+            </button>
+        </div>
+
+        <!-- Results Area -->
+        <div id="result-card" class="hidden bg-slate-900/60 border border-slate-700/80 rounded-xl p-5 mb-4">
+            <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                <div class="bg-slate-800/80 p-3 rounded-lg border border-slate-700">
+                    <span class="block text-slate-400 text-xs uppercase tracking-wider mb-1">You</span>
+                    <span id="player-display" class="text-lg font-bold capitalize">-</span>
+                </div>
+                <div class="bg-slate-800/80 p-3 rounded-lg border border-slate-700">
+                    <span class="block text-slate-400 text-xs uppercase tracking-wider mb-1">Computer</span>
+                    <span id="computer-display" class="text-lg font-bold capitalize">-</span>
+                </div>
+            </div>
+            <div id="winner-announcement" class="text-xl font-extrabold tracking-wide"></div>
+        </div>
+
+        <!-- Connection Error Banner -->
+        <div id="error-banner" class="hidden bg-red-900/50 border border-red-700 text-red-200 text-xs p-3 rounded-lg">
+            Could not connect to FastAPI server. Make sure Uvicorn is running on http://127.0.0.1:8000
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+
+        async function play(choice) {
+            const errorBanner = document.getElementById('error-banner');
+            const resultCard = document.getElementById('result-card');
+            
+            errorBanner.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}/play`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ choice: choice })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Server returned an error");
+                }
+
+                const data = await response.json();
+                updateUI(data);
+
+            } catch (error) {
+                console.error("API Error:", error);
+                errorBanner.classList.remove('hidden');
+            }
+        }
+
+        function updateUI(data) {
+            const resultCard = document.getElementById('result-card');
+            const playerDisplay = document.getElementById('player-display');
+            const computerDisplay = document.getElementById('computer-display');
+            const winnerAnnouncement = document.getElementById('winner-announcement');
+
+            const emojis = { rock: "🪨", paper: "📄", scissors: "✂️" };
+
+            resultCard.classList.remove('hidden');
+            playerDisplay.textContent = `${emojis[data.player_choice]} ${data.player_choice}`;
+            computerDisplay.textContent = `${emojis[data.computer_choice]} ${data.computer_choice}`;
+
+            if (data.winner === "player") {
+                winnerAnnouncement.textContent = "🎉 You Won!";
+                winnerAnnouncement.className = "text-xl font-extrabold text-emerald-400 tracking-wide";
+            } else if (data.winner === "computer") {
+                winnerAnnouncement.textContent = "💻 Computer Won!";
+                winnerAnnouncement.className = "text-xl font-extrabold text-rose-400 tracking-wide";
+            } else {
+                winnerAnnouncement.textContent = "🤝 It's a Tie!";
+                winnerAnnouncement.className = "text-xl font-extrabold text-amber-400 tracking-wide";
+            }
+        }
+    </script>
+</body>
+</html>
